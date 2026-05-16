@@ -1,0 +1,45 @@
+# ── Source data (PHI / large binary — never commit) ─────────────────────────
+data/*.xlsx
+data/*.xls
+data/*.sql
+
+# ── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Next.js ──────────────────────────────────────────────────────────────────
+.next/
+out/
+build/
+.turbo/
+.vercel
+
+# ── Environment variables ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ── claude-flow runtime (logs, sessions, metrics, hive state) ────────────────
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+.claude-flow/metrics/
+.claude-flow/hive-mind/
+.claude-flow/security/
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
