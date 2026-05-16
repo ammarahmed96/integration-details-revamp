@@ -49,7 +49,11 @@ export default async function SiteDetailPage({ params }: Props) {
             <tbody className="divide-y divide-gray-100">
               {facilities?.map(f => (
                 <tr key={f.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{f.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <a href={`/sites/${id}/facilities/${f.id}`} className="text-blue-600 hover:underline">
+                      {f.name}
+                    </a>
+                  </td>
                   <td className="px-4 py-3 text-gray-500">{f.campus_id ?? <span className="italic text-gray-400">not set</span>}</td>
                   <td className="px-4 py-3 text-gray-500">{f.ehr_index_pattern ?? '—'}</td>
                   <td className="px-4 py-3">

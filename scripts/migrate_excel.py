@@ -80,7 +80,10 @@ def q(value) -> str:
         return "NULL"
     if isinstance(value, bool):
         return "TRUE" if value else "FALSE"
-    s = str(value).replace("'", "''")
+    s = str(value).strip()
+    # Collapse any embedded newlines/tabs to a single space
+    s = " ".join(s.split())
+    s = s.replace("'", "''")
     return f"'{s}'"
 
 
@@ -331,8 +334,9 @@ def run(excel_path: Path, output, dry_run: bool, warnings: list):
         is_active = not bool_val(r[2])   # Deactivated=True → is_active=False
 
         # ---- facilities ----
+        fac_label = " ".join(str(r[0]).split())
         emit("-- ----------------------------------------------------------------")
-        emit(f"-- facility: {r[0]}  ({campus_id})  site: {site_slug}")
+        emit(f"-- facility: {fac_label}  ({campus_id})  site: {site_slug}")
         emit("-- ----------------------------------------------------------------")
         emit(
             f"INSERT INTO facilities "
@@ -507,7 +511,8 @@ def run(excel_path: Path, output, dry_run: bool, warnings: list):
         is_active = not bool_val(r[2])
 
         orig = str(r[1]).strip() if r[1] else "none in Excel"
-        emit(f"-- facility: {r[0]}  (campus_id in Excel: {orig})  site: {site_slug}")
+        fac_label = " ".join(str(r[0]).split())
+        emit(f"-- facility: {fac_label}  (campus_id in Excel: {orig})  site: {site_slug}")
         emit(
             f"INSERT INTO facilities "
             f"(id, site_id, campus_id, name, is_active, ehr_index_pattern, has_sso, implementation_package_url) VALUES ("
