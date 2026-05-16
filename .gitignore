@@ -34,6 +34,10 @@ venv/
 .claude-flow/hive-mind/
 .claude-flow/security/
 
+# ── Supabase local runtime ───────────────────────────────────────
+supabase/.branches
+supabase/.temp
+
 # ── OS ───────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
