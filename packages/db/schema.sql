@@ -209,12 +209,12 @@ INSERT INTO roles (name) VALUES
   ('admin'), ('editor'), ('viewer'), ('auditor'), ('site_editor'), ('org_editor');
 
 CREATE TABLE user_roles (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   role_id    UUID NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
   scope_type TEXT NOT NULL CHECK (scope_type IN ('global', 'organization', 'site')),
   scope_id   UUID,
-  PRIMARY KEY (user_id, role_id, scope_type,
-    COALESCE(scope_id, '00000000-0000-0000-0000-000000000000'::UUID))
+  UNIQUE NULLS NOT DISTINCT (user_id, role_id, scope_type, scope_id)
 );
 
 -- ── Audit ─────────────────────────────────────────────────────────
