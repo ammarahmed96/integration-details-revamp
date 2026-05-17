@@ -10,6 +10,8 @@ const BASE_LINKS = [
 const ADMIN_LINKS = [
   { href: '/admin/audit',  label: 'Audit Log' },
   { href: '/admin/import', label: 'Import' },
+  { href: '/admin/export', label: 'Export' },
+  { href: '/admin/roles',  label: 'Roles' },
 ]
 
 export default function NavLinks({ showAudit = false }: { showAudit?: boolean }) {
