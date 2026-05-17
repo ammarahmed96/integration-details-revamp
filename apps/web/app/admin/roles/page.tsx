@@ -1,8 +1,11 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { assignRole, revokeRole } from '@/app/actions/admin'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 
-const ROLE_NAMES = ['admin', 'editor', 'viewer', 'auditor', 'site_editor', 'org_editor'] as const
 const SCOPE_TYPES = ['global', 'site'] as const
 
 export default async function RolesPage() {
@@ -14,7 +17,7 @@ export default async function RolesPage() {
   if (!ok) {
     return (
       <main className="mx-auto max-w-4xl px-4 py-12 text-center">
-        <p className="text-gray-500">Access denied — auditor or admin role required.</p>
+        <p className="text-muted-foreground">Access denied — auditor or admin role required.</p>
       </main>
     )
   }
@@ -36,7 +39,6 @@ export default async function RolesPage() {
   const roleMap = new Map((roles ?? []).map(r => [r.id, r.name]))
   const siteMap = new Map((sites ?? []).map(s => [s.id, `${s.name} (${s.slug})`]))
 
-  // Group user_roles by user_id
   const userRolesByUser = new Map<string, typeof userRoles>()
   for (const ur of userRoles ?? []) {
     const arr = userRolesByUser.get(ur.user_id) ?? []
@@ -46,132 +48,125 @@ export default async function RolesPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-xl font-semibold text-gray-900">Role Management</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Role Management</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Assign and revoke roles for portal users
+        </p>
+      </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {(users ?? []).map(u => {
           const assignedRoles = userRolesByUser.get(u.id) ?? []
 
           return (
-            <div key={u.id} className="rounded-lg border border-gray-200 bg-white p-5">
-              <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="font-medium text-gray-900">{u.full_name || u.email}</p>
-                  {u.full_name && (
-                    <p className="text-xs text-gray-500">{u.email}</p>
-                  )}
+            <Card key={u.id} className="shadow-none">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-sm">{u.full_name || u.email}</p>
+                    {u.full_name && (
+                      <p className="text-xs text-muted-foreground">{u.email}</p>
+                    )}
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {assignedRoles.length} role{assignedRoles.length !== 1 ? 's' : ''}
+                  </Badge>
                 </div>
-              </div>
+              </CardHeader>
 
-              {/* Current roles */}
-              {assignedRoles.length > 0 ? (
-                <div className="mb-4">
-                  <p className="mb-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    Current Roles
-                  </p>
+              <CardContent className="pt-0 space-y-4">
+                {/* Current roles */}
+                {assignedRoles.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {assignedRoles.map(ur => {
                       const roleName = roleMap.get(ur.role_id) ?? ur.role_id
                       const scopeLabel =
                         ur.scope_type === 'site' && ur.scope_id
-                          ? `site: ${siteMap.get(ur.scope_id) ?? ur.scope_id}`
+                          ? siteMap.get(ur.scope_id) ?? ur.scope_id
                           : ur.scope_type
 
                       return (
-                        <form key={ur.id} action={revokeRole} className="inline-flex items-center">
+                        <form key={ur.id} action={revokeRole} className="inline-flex">
                           <input type="hidden" name="user_role_id" value={ur.id} />
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                            {roleName}
-                            <span className="text-blue-400">·</span>
-                            {scopeLabel}
-                            <button
-                              type="submit"
-                              title="Revoke role"
-                              className="ml-1 text-blue-400 hover:text-red-600 focus:outline-none"
-                            >
-                              ×
-                            </button>
-                          </span>
+                          <button
+                            type="submit"
+                            className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-2.5 py-1 text-xs font-medium text-foreground hover:border-destructive/50 hover:bg-destructive/5 hover:text-destructive transition-colors"
+                          >
+                            <span>{roleName}</span>
+                            <span className="text-muted-foreground text-[10px]">· {scopeLabel}</span>
+                            <span className="ml-0.5 text-muted-foreground group-hover:text-destructive">×</span>
+                          </button>
                         </form>
                       )
                     })}
                   </div>
-                </div>
-              ) : (
-                <p className="mb-4 text-xs text-gray-400">No roles assigned.</p>
-              )}
+                ) : (
+                  <p className="text-xs text-muted-foreground">No roles assigned.</p>
+                )}
 
-              {/* Add role form */}
-              <details className="group">
-                <summary className="cursor-pointer text-xs font-medium text-blue-600 hover:underline list-none">
-                  + Add role
-                </summary>
-                <form action={assignRole} className="mt-3 flex flex-wrap items-end gap-3">
-                  <input type="hidden" name="user_id" value={u.id} />
+                <Separator />
 
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-600">Role</label>
-                    <select
-                      name="role_id"
-                      required
-                      className="rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
-                    >
-                      <option value="">Select…</option>
-                      {(roles ?? []).map(r => (
-                        <option key={r.id} value={r.id}>
-                          {r.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Add role */}
+                <details className="group">
+                  <summary className="cursor-pointer text-xs font-medium text-primary hover:underline list-none select-none">
+                    + Add role
+                  </summary>
+                  <form action={assignRole} className="mt-3 flex flex-wrap items-end gap-3">
+                    <input type="hidden" name="user_id" value={u.id} />
 
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-600">Scope</label>
-                    <select
-                      name="scope_type"
-                      required
-                      className="rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
-                    >
-                      {SCOPE_TYPES.map(st => (
-                        <option key={st} value={st}>
-                          {st}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Role</label>
+                      <select
+                        name="role_id"
+                        required
+                        className="flex h-8 rounded-md border border-input bg-background px-2.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="">Select…</option>
+                        {(roles ?? []).map(r => (
+                          <option key={r.id} value={r.id}>{r.name}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-600">
-                      Site{' '}
-                      <span className="text-gray-400">(if scope = site)</span>
-                    </label>
-                    <select
-                      name="scope_id"
-                      className="rounded-md border border-gray-300 px-2.5 py-1.5 text-sm"
-                    >
-                      <option value="">— none —</option>
-                      {(sites ?? []).map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} ({s.slug})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Scope</label>
+                      <select
+                        name="scope_type"
+                        required
+                        className="flex h-8 rounded-md border border-input bg-background px-2.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        {SCOPE_TYPES.map(st => (
+                          <option key={st} value={st}>{st}</option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <button
-                    type="submit"
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-                  >
-                    Assign
-                  </button>
-                </form>
-              </details>
-            </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">
+                        Site <span className="text-muted-foreground/60">(if site scope)</span>
+                      </label>
+                      <select
+                        name="scope_id"
+                        className="flex h-8 rounded-md border border-input bg-background px-2.5 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="">— none —</option>
+                        {(sites ?? []).map(s => (
+                          <option key={s.id} value={s.id}>{s.name} ({s.slug})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <Button type="submit" size="sm" className="h-8">Assign</Button>
+                  </form>
+                </details>
+              </CardContent>
+            </Card>
           )
         })}
 
         {(!users || users.length === 0) && (
-          <p className="text-sm text-gray-500">No users found.</p>
+          <p className="text-sm text-muted-foreground">No users found.</p>
         )}
       </div>
     </main>

@@ -1,4 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 interface Props {
   searchParams: Promise<{ q?: string }>
@@ -24,68 +37,76 @@ export default async function SitesPage({ searchParams }: Props) {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Sites</h1>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{sites?.length ?? 0} result{sites?.length !== 1 ? 's' : ''}</span>
-          <a href="/sites/new"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-            + Add Site
-          </a>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Sites</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Manage healthcare site configurations
+          </p>
         </div>
+        <a href="/sites/new" className={cn(buttonVariants({ size: 'sm' }))}>
+          + Add Site
+        </a>
       </div>
 
       {/* Search */}
-      <form method="GET" className="mb-4 flex gap-2">
-        <input
+      <form method="GET" className="mb-4 flex items-center gap-2">
+        <Input
           name="q"
           defaultValue={q ?? ''}
           placeholder="Search by name or slug…"
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="max-w-sm bg-background"
         />
-        <button
-          type="submit"
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-        >
-          Search
-        </button>
+        <Button type="submit" variant="outline" size="sm">Search</Button>
         {q && (
-          <a
-            href="/sites"
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50"
-          >
+          <a href="/sites" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
             Clear
           </a>
         )}
+        {sites && sites.length > 0 && (
+          <Badge variant="secondary" className="ml-auto">
+            {sites.length} result{sites.length !== 1 ? 's' : ''}
+          </Badge>
+        )}
       </form>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-        {sites && sites.length > 0 ? (
-          <table className="w-full text-sm">
-            <thead className="border-b border-gray-200 bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Name</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Slug</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sites.map(site => (
-                <tr key={site.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <a href={`/sites/${site.id}`} className="font-medium text-blue-600 hover:underline">
-                      {site.name}
-                    </a>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{site.slug}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="px-4 py-12 text-center text-sm text-gray-400">
-            {q ? `No sites match "${q}"` : 'No sites found.'}
-          </div>
-        )}
-      </div>
+      <Card>
+        <CardHeader className="py-0 px-0">
+          {/* intentionally empty — table provides its own header row */}
+        </CardHeader>
+        <CardContent className="p-0">
+          {sites && sites.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-4">Name</TableHead>
+                  <TableHead>Slug</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sites.map(site => (
+                  <TableRow key={site.id}>
+                    <TableCell className="pl-4">
+                      <a
+                        href={`/sites/${site.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {site.name}
+                      </a>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-xs">
+                      {site.slug}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="px-4 py-16 text-center text-sm text-muted-foreground">
+              {q ? `No sites match "${q}"` : 'No sites found.'}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </main>
   )
 }
