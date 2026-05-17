@@ -35,10 +35,11 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         {/* Logo mark */}
         <div className="flex flex-col items-center gap-2 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#051c2c] text-white text-sm font-bold shadow-sm">
             IP
           </div>
-          <p className="text-xs text-muted-foreground">Integration Details Portal</p>
+          <p className="text-sm font-semibold text-brand-navy tracking-tight">Integration Portal</p>
+          <p className="text-xs text-muted-foreground -mt-1">Healthcare Integration Management</p>
         </div>
 
         <Card className="shadow-sm">

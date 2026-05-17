@@ -19,7 +19,7 @@ export default function NavLinks({ showAudit = false }: { showAudit?: boolean })
   const links = showAudit ? [...BASE_LINKS, ...ADMIN_LINKS] : BASE_LINKS
 
   return (
-    <nav className="flex items-center gap-1">
+    <nav className="flex items-center gap-0.5">
       {links.map(link => {
         const active = pathname.startsWith(link.href)
         return (
@@ -28,8 +28,8 @@ export default function NavLinks({ showAudit = false }: { showAudit?: boolean })
             href={link.href}
             className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
               active
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                ? 'bg-white/10 text-[#18efe4]'
+                : 'text-white/70 hover:bg-white/10 hover:text-white'
             }`}
           >
             {link.label}

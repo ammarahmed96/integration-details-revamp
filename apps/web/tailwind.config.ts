@@ -9,6 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        brand: {
+          navy:       '#051c2c',
+          blue:       '#017ecf',
+          teal:       '#05b1a8',
+          'teal-light': '#18efe4',
+          'off-white':  '#f5f5f7',
+        },
         background: 'var(--background)',
         foreground: 'var(--foreground)',
         card: { DEFAULT: 'var(--card)', foreground: 'var(--card-foreground)' },

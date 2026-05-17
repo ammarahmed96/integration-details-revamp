@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Badge } from '@/components/ui/badge'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,10 +20,10 @@ const TABLE_LABELS: Record<string, string> = {
 
 const ALL_TABLES = Object.keys(TABLE_LABELS)
 
-const ACTION_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  INSERT: 'default',
-  UPDATE: 'secondary',
-  DELETE: 'destructive',
+const ACTION_CLASS: Record<string, string> = {
+  INSERT: 'bg-teal-50 text-teal-700 border border-teal-200',
+  UPDATE: 'bg-blue-50 text-blue-700 border border-blue-200',
+  DELETE: 'bg-red-50 text-red-700 border border-red-200',
 }
 
 function display(val: unknown): string {
@@ -184,7 +183,7 @@ export default async function AuditPage({ searchParams }: Props) {
             const ts = new Date(log.created_at ?? '')
             const userEmail = (log.users as { email?: string } | null)?.email ?? log.user_id ?? '—'
             const tableLabel = TABLE_LABELS[log.table_name] ?? log.table_name
-            const actionVariant = ACTION_VARIANT[log.action] ?? 'outline'
+            const actionClass = ACTION_CLASS[log.action] ?? 'bg-gray-50 text-gray-600 border border-gray-200'
 
             return (
               <Card key={log.id} className="shadow-none">
@@ -192,9 +191,9 @@ export default async function AuditPage({ searchParams }: Props) {
                   <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-sm">{tableLabel}</span>
-                      <Badge variant={actionVariant} className="text-xs">
+                      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${actionClass}`}>
                         {log.action}
-                      </Badge>
+                      </span>
                     </div>
                     <div className="text-right text-xs text-muted-foreground">
                       <div className="font-medium">{userEmail}</div>

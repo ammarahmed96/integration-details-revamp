@@ -1,5 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -28,60 +34,101 @@ export default async function SiteDetailPage({ params }: Props) {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <nav className="mb-4 text-sm text-gray-500">
-        <a href="/sites" className="hover:underline">Sites</a>
-        <span className="mx-2">/</span>
-        <span className="text-gray-900">{site.name}</span>
+      {/* Breadcrumb */}
+      <nav className="mb-5 flex items-center gap-1.5 text-sm text-muted-foreground">
+        <a href="/sites" className="hover:text-foreground transition-colors">Sites</a>
+        <span className="text-border">/</span>
+        <span className="text-foreground font-medium">{site.name}</span>
       </nav>
 
-      <h1 className="mb-1 text-2xl font-semibold">{site.name}</h1>
-      <p className="mb-8 text-sm text-gray-500">Site ID: {site.slug}</p>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight">{site.name}</h1>
+        <div className="mt-1 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Site ID</span>
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">
+            {site.slug}
+          </code>
+        </div>
+      </div>
 
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium">Facilities ({facilities?.length ?? 0})</h2>
-          {canEdit && (
-            <a href={`/sites/${id}/facilities/new`}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              + Add Facility
-            </a>
+      {/* Facilities section */}
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-base font-semibold">
+          Facilities
+          <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">
+            {facilities?.length ?? 0}
+          </span>
+        </h2>
+        {canEdit && (
+          <a
+            href={`/sites/${id}/facilities/new`}
+            className={cn(buttonVariants({ size: 'sm' }))}
+          >
+            + Add Facility
+          </a>
+        )}
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          {facilities && facilities.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-4">Facility Name</TableHead>
+                  <TableHead>Campus ID</TableHead>
+                  <TableHead>EHR Pattern</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {facilities.map(f => (
+                  <TableRow key={f.id}>
+                    <TableCell className="pl-4 font-medium">
+                      <a
+                        href={`/sites/${id}/facilities/${f.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        {f.name}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      {f.campus_id
+                        ? <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">{f.campus_id}</code>
+                        : <span className="text-xs italic text-muted-foreground">not set</span>}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground font-mono text-xs">
+                      {f.ehr_index_pattern ?? '—'}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        f.is_active
+                          ? 'bg-teal-50 text-teal-700 ring-1 ring-teal-200'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {f.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="px-4 py-16 text-center">
+              <p className="text-sm text-muted-foreground">No facilities yet.</p>
+              {canEdit && (
+                <a
+                  href={`/sites/${id}/facilities/new`}
+                  className={cn(buttonVariants({ size: 'sm', variant: 'outline' }), 'mt-3')}
+                >
+                  + Add the first facility
+                </a>
+              )}
+            </div>
           )}
-        </div>
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="border-b border-gray-200 bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Facility Name</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Campus ID</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">EHR Pattern</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {facilities?.map(f => (
-                <tr key={f.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">
-                    <a href={`/sites/${id}/facilities/${f.id}`} className="text-blue-600 hover:underline">
-                      {f.name}
-                    </a>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{f.campus_id ?? <span className="italic text-gray-400">not set</span>}</td>
-                  <td className="px-4 py-3 text-gray-500">{f.ehr_index_pattern ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                      f.is_active
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {f.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     </main>
   )
 }
