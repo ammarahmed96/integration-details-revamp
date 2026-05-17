@@ -11,8 +11,8 @@ export async function createSite(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthenticated')
-  const { data: isAdmin } = await supabase.rpc('is_auditor')
-  if (!isAdmin) throw new Error('Admin role required to create sites')
+  const { data: isAdmin } = await supabase.rpc('is_global_editor')
+  if (!isAdmin) throw new Error('Editor role required to create sites')
 
   const name = (formData.get('name') as string).trim()
   // Strip anything that isn't a lowercase letter, digit, or hyphen

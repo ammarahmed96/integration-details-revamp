@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import {
   updateFacility, updateReceivingFeeds, updateParsingFeeds,
   updateEpicIntegrations, updateLetters, updateCohorts,
@@ -27,6 +27,8 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
   const { id: siteId, fid } = await params
   const { edit } = await searchParams
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
 
   const { data: site }     = await supabase.from('sites').select('id, name, slug').eq('id', siteId).single()
   const { data: facility } = await supabase.from('facilities').select('*').eq('id', fid).eq('site_id', siteId).single()
@@ -128,7 +130,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
               <Field label="SSO"><Badge active={!!facility.has_sso} label={facility.has_sso ? 'Yes' : 'No'} /></Field>
               {facility.implementation_package_url && (
                 <Field label="Implementation Package">
-                  {facility.implementation_package_url.startsWith('http')
+                  {facility.implementation_package_url.startsWith('https://')
                     ? <a href={facility.implementation_package_url} target="_blank" rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:underline">{facility.implementation_package_url}</a>
                     : <span className="text-xs text-gray-700">{facility.implementation_package_url}</span>
@@ -268,7 +270,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                       <label key={cohort} className="flex cursor-pointer items-center gap-1.5 text-sm">
                         <input type="checkbox" name={`cohort_${cohort}`} value="true" defaultChecked={isLive}
                           className="rounded border-gray-300" />
-                        <span className="capitalize">{cohort.replace('_', ' ')}</span>
+                        <span className="capitalize">{cohort.replace(/_/g, ' ')}</span>
                       </label>
                     )
                   })}
@@ -301,7 +303,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                     <label key={cohort} className="flex cursor-pointer items-center gap-1.5 text-sm">
                       <input type="checkbox" name={`icp_${cohort}`} value="true" defaultChecked={isLive}
                         className="rounded border-gray-300" />
-                      <span className="capitalize">{cohort.replace('_', ' ')}</span>
+                      <span className="capitalize">{cohort.replace(/_/g, ' ')}</span>
                     </label>
                   )
                 })}
@@ -340,7 +342,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                       const hasFull   = cmCohorts?.some(c => c.cohort === cohort && c.cm_type === 'full')
                       return (
                         <tr key={cohort} className="border-t border-gray-100">
-                          <td className="py-1 pr-6 capitalize">{cohort.replace('_', ' ')}</td>
+                          <td className="py-1 pr-6 capitalize">{cohort.replace(/_/g, ' ')}</td>
                           <td className="py-1 pr-4 text-center">
                             <input type="checkbox" name={`cm_hybrid_${cohort}`} value="true" defaultChecked={!!hasHybrid} />
                           </td>

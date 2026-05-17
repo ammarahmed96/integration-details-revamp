@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -14,6 +15,8 @@ interface Props {
 export default async function FacilitiesPage({ searchParams }: Props) {
   const { q, site: siteFilter, status } = await searchParams
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
 
   const { data: sites } = await supabase
     .from('sites')
@@ -26,7 +29,8 @@ export default async function FacilitiesPage({ searchParams }: Props) {
     .order('name')
 
   if (q?.trim()) {
-    query = query.or(`name.ilike.%${q.trim()}%,campus_id.ilike.%${q.trim()}%`)
+    const sq = q.trim().replace(/[^a-zA-Z0-9 \-_.]/g, '')
+    if (sq) query = query.or(`name.ilike.%${sq}%,campus_id.ilike.%${sq}%`)
   }
   if (siteFilter) {
     query = query.eq('site_id', siteFilter)

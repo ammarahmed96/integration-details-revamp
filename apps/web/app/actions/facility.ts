@@ -252,7 +252,7 @@ export async function updateServerConfig(siteId: string, fid: string, formData: 
     if (!VALID_PORT.test(portNum)) throw new Error(`Invalid port number: "${portNum}"`)
     const n = parseInt(portNum, 10)
     if (n < 1 || n > 65535) throw new Error(`Port out of range: ${n}`)
-    return { facility_id: fid, port_number: portNum, port_name: rest.join(':').trim() || null }
+    return { facility_id: fid, port_number: n, port_name: rest.join(':').trim() || null }
   })
 
   const { data: before } = await supabase.from('server_configs').select('*').eq('facility_id', fid).single()
@@ -364,8 +364,9 @@ export async function updateCmCohorts(siteId: string, fid: string, formData: For
   if (toDelete.length > 0) {
     const admin = createAdminClient()
     for (const entry of toDelete) {
-      await admin.from('facility_cm_cohorts')
+      const { error } = await admin.from('facility_cm_cohorts')
         .delete().eq('facility_id', fid).eq('cohort', entry.cohort).eq('cm_type', entry.cm_type)
+      if (error) throw new Error(`Failed to remove cohort entry: ${error.message}`)
     }
   }
 

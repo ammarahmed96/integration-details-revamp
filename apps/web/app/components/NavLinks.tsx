@@ -21,7 +21,7 @@ export default function NavLinks({ showAudit = false }: { showAudit?: boolean })
   return (
     <nav className="flex items-center gap-0.5">
       {links.map(link => {
-        const active = pathname.startsWith(link.href)
+        const active = pathname === link.href || pathname.startsWith(link.href + '/')
         return (
           <a
             key={link.href}

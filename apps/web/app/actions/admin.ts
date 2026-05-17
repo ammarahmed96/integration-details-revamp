@@ -22,6 +22,10 @@ export async function assignRole(formData: FormData) {
   if (!userId || !roleId || !scopeType) {
     throw new Error('Missing required fields')
   }
+  const VALID_SCOPE_TYPES = ['global', 'site']
+  if (!VALID_SCOPE_TYPES.includes(scopeType)) {
+    throw new Error('Invalid scope_type')
+  }
 
   const admin = createAdminClient()
   const { error } = await admin.from('user_roles').insert({

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -20,6 +21,8 @@ interface Props {
 export default async function SitesPage({ searchParams }: Props) {
   const { q } = await searchParams
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
 
   let query = supabase
     .from('sites')
@@ -28,7 +31,8 @@ export default async function SitesPage({ searchParams }: Props) {
     .limit(500)
 
   if (q?.trim()) {
-    query = query.or(`name.ilike.%${q.trim()}%,slug.ilike.%${q.trim()}%`)
+    const sq = q.trim().replace(/[^a-zA-Z0-9 \-_.]/g, '')
+    if (sq) query = query.or(`name.ilike.%${sq}%,slug.ilike.%${sq}%`)
   }
 
   const [{ data: sites, error }, { data: canEdit }] = await Promise.all([
