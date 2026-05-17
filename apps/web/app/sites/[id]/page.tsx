@@ -35,7 +35,13 @@ export default async function SiteDetailPage({ params }: Props) {
       <p className="mb-8 text-sm text-gray-500">Slug: {site.slug}</p>
 
       <section>
-        <h2 className="mb-3 text-lg font-medium">Facilities ({facilities?.length ?? 0})</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-medium">Facilities ({facilities?.length ?? 0})</h2>
+          <a href={`/sites/${id}/facilities/new`}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            + Add Facility
+          </a>
+        </div>
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           <table className="w-full text-sm">
             <thead className="border-b border-gray-200 bg-gray-50">

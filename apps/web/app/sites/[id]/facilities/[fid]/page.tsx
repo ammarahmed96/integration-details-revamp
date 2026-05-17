@@ -1,138 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import {
-  updateFacility,
-  updateReceivingFeeds,
-  updateParsingFeeds,
-  updateEpicIntegrations,
-  updateLetters,
-  updateCohorts,
+  updateFacility, updateReceivingFeeds, updateParsingFeeds,
+  updateEpicIntegrations, updateLetters, updateCohorts,
+  updateEhrDetails, updateServerConfig, updateReportingDb,
+  updateIcpGolive, updateCmCohorts,
 } from '@/app/actions/facility'
+import {
+  Badge, FeedBadge, Field, BoolSelect, FeedSelect, EditField,
+  FormActions, Section, ReadSection, ALL_COHORTS, MIDDLEWARE_OPTIONS,
+} from './facility-ui'
 
 interface Props {
   params: Promise<{ id: string; fid: string }>
   searchParams: Promise<{ edit?: string }>
 }
-
-// ── Small display helpers ─────────────────────────────────────────────────────
-
-function Badge({ active, label }: { active: boolean; label: string }) {
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-      active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
-    }`}>{label}</span>
-  )
-}
-
-function FeedBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    active:    'bg-green-100 text-green-700',
-    inactive:  'bg-gray-100 text-gray-400',
-    flat_file: 'bg-yellow-100 text-yellow-700',
-  }
-  const labels: Record<string, string> = { active: 'Active', inactive: 'Inactive', flat_file: 'Flat File' }
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${styles[status] ?? styles.inactive}`}>
-      {labels[status] ?? status}
-    </span>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2 py-1.5">
-      <span className="w-44 shrink-0 text-xs text-gray-500">{label}</span>
-      <span className="text-sm text-gray-900">{children}</span>
-    </div>
-  )
-}
-
-// ── Form helpers ──────────────────────────────────────────────────────────────
-
-function BoolSelect({ name, value }: { name: string; value: boolean }) {
-  return (
-    <select name={name} defaultValue={value ? 'true' : 'false'}
-      className="rounded border border-gray-300 px-2 py-1 text-sm">
-      <option value="true">Yes</option>
-      <option value="false">No</option>
-    </select>
-  )
-}
-
-function FeedSelect({ name, value }: { name: string; value: string }) {
-  return (
-    <select name={name} defaultValue={value}
-      className="rounded border border-gray-300 px-2 py-1 text-sm">
-      <option value="active">Active</option>
-      <option value="inactive">Inactive</option>
-      <option value="flat_file">Flat File</option>
-    </select>
-  )
-}
-
-function EditField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 py-1.5">
-      <span className="w-44 shrink-0 text-xs text-gray-500">{label}</span>
-      {children}
-    </div>
-  )
-}
-
-function FormActions({ cancelHref }: { cancelHref: string }) {
-  return (
-    <div className="mt-4 flex gap-2 border-t border-gray-100 pt-4">
-      <button type="submit"
-        className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-        Save
-      </button>
-      <a href={cancelHref}
-        className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50">
-        Cancel
-      </a>
-    </div>
-  )
-}
-
-// ── Section wrapper ───────────────────────────────────────────────────────────
-
-function Section({
-  title, editHref, isEditing, canEdit, children,
-}: {
-  title: string
-  editHref: string
-  isEditing: boolean
-  canEdit: boolean
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-xl border border-gray-200 bg-white">
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-        <h2 className="text-sm font-semibold text-gray-700">{title}</h2>
-        {canEdit && !isEditing && (
-          <a href={editHref}
-            className="rounded border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50">
-            Edit
-          </a>
-        )}
-      </div>
-      <div className="px-4 py-3">{children}</div>
-    </section>
-  )
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
-const ALL_COHORTS = [
-  'lcs','lung','g_lung','aaa','taa','pancreas',
-  'ielcap','thyroid','liver','renal','calcium','af','breast',
-] as const
-
-const MIDDLEWARE_OPTIONS = [
-  'eon-middleware','eon-hca-middleware','eon-middleware-bmhcc',
-  'eon-lpnt-middleware','eon-ascension-middleware','eon-uch-middleware',
-  'eon-geisinger-middleware','eon-middleware-queue',
-]
 
 export default async function FacilityDetailPage({ params, searchParams }: Props) {
   const { id: siteId, fid } = await params
@@ -141,39 +23,48 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
 
   const { data: site }     = await supabase.from('sites').select('id, name, slug').eq('id', siteId).single()
   const { data: facility } = await supabase.from('facilities').select('*').eq('id', fid).eq('site_id', siteId).single()
-
   if (!facility || !site) notFound()
 
-  // Role check — can the current user edit this site?
-  const { data: canEdit } = await supabase.rpc('can_edit_site', { p_site_id: siteId })
-
-  const { data: rf }        = await supabase.from('receiving_feeds').select('*').eq('facility_id', fid).single()
-  const { data: pf }        = await supabase.from('parsing_feeds').select('*').eq('facility_id', fid).single()
-  const { data: ei }        = await supabase.from('epic_integrations').select('*').eq('facility_id', fid).single()
-  const { data: cohorts }   = await supabase.from('facility_cohorts').select('cohort, is_live').eq('facility_id', fid).order('cohort')
-  const { data: cmCohorts } = await supabase.from('facility_cm_cohorts').select('cohort, cm_type').eq('facility_id', fid).order('cohort')
-  const { data: icp }       = await supabase.from('facility_icp_golive').select('cohort, is_live').eq('facility_id', fid).order('cohort')
-  const { data: ports }     = await supabase.from('facility_ports').select('port_number, port_name').eq('facility_id', fid).order('port_number')
-  const { data: sc }        = await supabase.from('server_configs').select('*').eq('facility_id', fid).single()
-  const { data: lc }        = await supabase.from('letters_config').select('*').eq('facility_id', fid).single()
-  const { data: rd }        = await supabase.from('reporting_db').select('*').eq('facility_id', fid).single()
-  const { data: ehr }       = await supabase.from('ehr_details').select('*').eq('facility_id', fid).single()
+  const [
+    { data: canEdit }, { data: rf }, { data: pf }, { data: ei },
+    { data: cohorts }, { data: cmCohorts }, { data: icp },
+    { data: ports }, { data: sc }, { data: lc }, { data: rd }, { data: ehr },
+  ] = await Promise.all([
+    supabase.rpc('can_edit_site', { p_site_id: siteId }),
+    supabase.from('receiving_feeds').select('*').eq('facility_id', fid).single(),
+    supabase.from('parsing_feeds').select('*').eq('facility_id', fid).single(),
+    supabase.from('epic_integrations').select('*').eq('facility_id', fid).single(),
+    supabase.from('facility_cohorts').select('cohort, is_live').eq('facility_id', fid).order('cohort'),
+    supabase.from('facility_cm_cohorts').select('cohort, cm_type').eq('facility_id', fid).order('cohort'),
+    supabase.from('facility_icp_golive').select('cohort, is_live').eq('facility_id', fid).order('cohort'),
+    supabase.from('facility_ports').select('port_number, port_name').eq('facility_id', fid).order('port_number'),
+    supabase.from('server_configs').select('*').eq('facility_id', fid).single(),
+    supabase.from('letters_config').select('*').eq('facility_id', fid).single(),
+    supabase.from('reporting_db').select('*').eq('facility_id', fid).single(),
+    supabase.from('ehr_details').select('*').eq('facility_id', fid).single(),
+  ])
 
   const allCohorts  = cohorts ?? []
-  const liveCohorts = allCohorts.filter(c => c.is_live).map(c => c.cohort)
+  const liveCohorts = allCohorts.filter(c => c.is_live)
   const base = `/sites/${siteId}/facilities/${fid}`
+  const ed = (section: string) => `${base}?edit=${section}`
 
-  // Bind server actions to this facility
-  const saveFacility  = updateFacility.bind(null, siteId, fid)
-  const saveReceiving = updateReceivingFeeds.bind(null, siteId, fid)
-  const saveParsing   = updateParsingFeeds.bind(null, siteId, fid)
-  const saveEpic      = updateEpicIntegrations.bind(null, siteId, fid)
-  const saveLetters   = updateLetters.bind(null, siteId, fid)
-  const saveCohorts   = updateCohorts.bind(null, siteId, fid)
+  const saveFacility    = updateFacility.bind(null, siteId, fid)
+  const saveReceiving   = updateReceivingFeeds.bind(null, siteId, fid)
+  const saveParsing     = updateParsingFeeds.bind(null, siteId, fid)
+  const saveEpic        = updateEpicIntegrations.bind(null, siteId, fid)
+  const saveLetters     = updateLetters.bind(null, siteId, fid)
+  const saveCohorts     = updateCohorts.bind(null, siteId, fid)
+  const saveEhr         = updateEhrDetails.bind(null, siteId, fid)
+  const saveServerCfg   = updateServerConfig.bind(null, siteId, fid)
+  const saveReportingDb = updateReportingDb.bind(null, siteId, fid)
+  const saveIcp         = updateIcpGolive.bind(null, siteId, fid)
+  const saveCmCohorts   = updateCmCohorts.bind(null, siteId, fid)
+
+  const portsDefault = (ports ?? []).map(p => p.port_name ? `${p.port_number}: ${p.port_name}` : p.port_number).join('\n')
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8">
-      {/* Breadcrumb */}
       <nav className="mb-4 text-sm text-gray-500">
         <a href="/sites" className="hover:underline">Sites</a>
         <span className="mx-2">/</span>
@@ -182,7 +73,6 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
         <span className="text-gray-900">{facility.name}</span>
       </nav>
 
-      {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">{facility.name}</h1>
@@ -196,16 +86,13 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
         </div>
         <span className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-medium ${
           facility.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-        }`}>
-          {facility.is_active ? 'Active' : 'Inactive'}
-        </span>
+        }`}>{facility.is_active ? 'Active' : 'Inactive'}</span>
       </div>
 
       <div className="grid gap-4">
 
         {/* ── Facility basics ── */}
-        <Section title="Facility" editHref={`${base}?edit=facility`}
-          isEditing={edit === 'facility'} canEdit={!!canEdit}>
+        <Section title="Facility" editHref={ed('facility')} isEditing={edit === 'facility'} canEdit={!!canEdit}>
           {edit === 'facility' ? (
             <form action={saveFacility}>
               <EditField label="Name">
@@ -213,12 +100,19 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                   className="w-72 rounded border border-gray-300 px-2 py-1 text-sm" />
               </EditField>
               <EditField label="Campus ID">
-                <input name="campus_id" defaultValue={facility.campus_id ?? ''}
-                  placeholder="leave blank for null"
+                <input name="campus_id" defaultValue={facility.campus_id ?? ''} placeholder="leave blank for null"
                   className="w-48 rounded border border-gray-300 px-2 py-1 text-sm" />
               </EditField>
               <EditField label="Active"><BoolSelect name="is_active" value={facility.is_active} /></EditField>
               <EditField label="SSO"><BoolSelect name="has_sso" value={!!facility.has_sso} /></EditField>
+              <EditField label="EHR Index Pattern">
+                <input name="ehr_index_pattern" defaultValue={facility.ehr_index_pattern ?? ''}
+                  className="w-72 rounded border border-gray-300 px-2 py-1 text-sm" />
+              </EditField>
+              <EditField label="Implementation Package URL">
+                <input name="implementation_package_url" defaultValue={facility.implementation_package_url ?? ''}
+                  className="w-96 rounded border border-gray-300 px-2 py-1 text-sm" />
+              </EditField>
               <FormActions cancelHref={base} />
             </form>
           ) : (
@@ -228,31 +122,43 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
               {facility.implementation_package_url && (
                 <Field label="Implementation Package">
                   <a href={facility.implementation_package_url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline">
-                    {facility.implementation_package_url}
-                  </a>
+                    className="text-xs text-blue-600 hover:underline">{facility.implementation_package_url}</a>
                 </Field>
               )}
             </>
           )}
         </Section>
 
-        {/* ── EHR IDs ── */}
-        {ehr && (
-          <section className="rounded-xl border border-gray-200 bg-white">
-            <h2 className="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">EHR Identifiers</h2>
-            <div className="px-4 py-3">
-              <Field label="Facility ID">{ehr.ehr_facility_id ?? '—'}</Field>
-              <Field label="Site ID">{ehr.ehr_site_id ?? '—'}</Field>
-              <Field label="Interface ID">{ehr.ehr_interface_id ?? '—'}</Field>
-            </div>
-          </section>
-        )}
+        {/* ── EHR Identifiers ── */}
+        <Section title="EHR Identifiers" editHref={ed('ehr')} isEditing={edit === 'ehr'} canEdit={!!canEdit}>
+          {edit === 'ehr' ? (
+            <form action={saveEhr}>
+              <EditField label="Facility ID">
+                <input name="ehr_facility_id" defaultValue={ehr?.ehr_facility_id ?? ''}
+                  className="w-48 rounded border border-gray-300 px-2 py-1 text-sm" />
+              </EditField>
+              <EditField label="Site ID">
+                <input name="ehr_site_id" defaultValue={ehr?.ehr_site_id ?? ''}
+                  className="w-48 rounded border border-gray-300 px-2 py-1 text-sm" />
+              </EditField>
+              <EditField label="Interface ID">
+                <input name="ehr_interface_id" defaultValue={ehr?.ehr_interface_id ?? ''}
+                  className="w-48 rounded border border-gray-300 px-2 py-1 text-sm" />
+              </EditField>
+              <FormActions cancelHref={base} />
+            </form>
+          ) : (
+            <>
+              <Field label="Facility ID">{ehr?.ehr_facility_id ?? '—'}</Field>
+              <Field label="Site ID">{ehr?.ehr_site_id ?? '—'}</Field>
+              <Field label="Interface ID">{ehr?.ehr_interface_id ?? '—'}</Field>
+            </>
+          )}
+        </Section>
 
         {/* ── Receiving feeds ── */}
         {rf && (
-          <Section title="Receiving Feeds" editHref={`${base}?edit=receiving`}
-            isEditing={edit === 'receiving'} canEdit={!!canEdit}>
+          <Section title="Receiving Feeds" editHref={ed('receiving')} isEditing={edit === 'receiving'} canEdit={!!canEdit}>
             {edit === 'receiving' ? (
               <form action={saveReceiving}>
                 <div className="grid grid-cols-2 gap-x-8 sm:grid-cols-4">
@@ -284,8 +190,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
 
         {/* ── Parsing feeds ── */}
         {pf && (
-          <Section title="Parsing Feeds" editHref={`${base}?edit=parsing`}
-            isEditing={edit === 'parsing'} canEdit={!!canEdit}>
+          <Section title="Parsing Feeds" editHref={ed('parsing')} isEditing={edit === 'parsing'} canEdit={!!canEdit}>
             {edit === 'parsing' ? (
               <form action={saveParsing}>
                 <div className="grid grid-cols-2 gap-x-8 sm:grid-cols-4">
@@ -295,9 +200,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                     ['mfn','MFN'],['clarity','Clarity'],['physician_clarity','Physician Clarity'],
                     ['exam_clarity','Exam Clarity'],['eon_connect','Eon Connect'],
                   ] as [keyof typeof pf, string][]).map(([key, label]) => (
-                    <EditField key={key} label={label}>
-                      <BoolSelect name={key} value={!!pf[key]} />
-                    </EditField>
+                    <EditField key={key} label={label}><BoolSelect name={key} value={!!pf[key]} /></EditField>
                   ))}
                 </div>
                 <FormActions cancelHref={base} />
@@ -310,19 +213,16 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                   ['mfn','MFN'],['clarity','Clarity'],['physician_clarity','Physician Clarity'],
                   ['exam_clarity','Exam Clarity'],['eon_connect','Eon Connect'],
                 ] as [keyof typeof pf, string][]).map(([key, label]) => (
-                  <Field key={key} label={label}>
-                    <Badge active={!!pf[key]} label={pf[key] ? 'Yes' : 'No'} />
-                  </Field>
+                  <Field key={key} label={label}><Badge active={!!pf[key]} label={pf[key] ? 'Yes' : 'No'} /></Field>
                 ))}
               </div>
             )}
           </Section>
         )}
 
-        {/* ── EPIC integrations ── */}
+        {/* ── EPIC Integrations ── */}
         {ei && (
-          <Section title="EPIC Integrations" editHref={`${base}?edit=epic`}
-            isEditing={edit === 'epic'} canEdit={!!canEdit}>
+          <Section title="EPIC Integrations" editHref={ed('epic')} isEditing={edit === 'epic'} canEdit={!!canEdit}>
             {edit === 'epic' ? (
               <form action={saveEpic}>
                 <EditField label="FHIR"><BoolSelect name="fhir" value={ei.fhir} /></EditField>
@@ -346,20 +246,17 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
           </Section>
         )}
 
-        {/* ── Cohorts ── */}
+        {/* ── Live Cohorts ── */}
         {allCohorts.length > 0 && (
-          <Section title="Live Cohorts" editHref={`${base}?edit=cohorts`}
-            isEditing={edit === 'cohorts'} canEdit={!!canEdit}>
+          <Section title="Live Cohorts" editHref={ed('cohorts')} isEditing={edit === 'cohorts'} canEdit={!!canEdit}>
             {edit === 'cohorts' ? (
               <form action={saveCohorts}>
                 <div className="flex flex-wrap gap-3">
                   {ALL_COHORTS.map(cohort => {
-                    const current = allCohorts.find(c => c.cohort === cohort)
-                    const isLive = current?.is_live ?? false
+                    const isLive = allCohorts.find(c => c.cohort === cohort)?.is_live ?? false
                     return (
-                      <label key={cohort} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                        <input type="checkbox" name={`cohort_${cohort}`} value="true"
-                          defaultChecked={isLive}
+                      <label key={cohort} className="flex cursor-pointer items-center gap-1.5 text-sm">
+                        <input type="checkbox" name={`cohort_${cohort}`} value="true" defaultChecked={isLive}
                           className="rounded border-gray-300" />
                         <span className="capitalize">{cohort.replace('_', ' ')}</span>
                       </label>
@@ -383,38 +280,88 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
           </Section>
         )}
 
-        {/* ── ICP Golive (read-only) ── */}
-        {(icp?.length ?? 0) > 0 && (
-          <section className="rounded-xl border border-gray-200 bg-white">
-            <h2 className="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">ICP Go-Live</h2>
-            <div className="px-4 py-3 flex flex-wrap gap-2">
-              {icp!.map(c => (
-                <span key={c.cohort} className={`rounded-full px-3 py-1 text-xs font-medium ${
-                  c.is_live ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'
-                }`}>{c.cohort}</span>
-              ))}
+        {/* ── ICP Go-Live ── */}
+        <Section title="ICP Go-Live" editHref={ed('icp')} isEditing={edit === 'icp'} canEdit={!!canEdit}>
+          {edit === 'icp' ? (
+            <form action={saveIcp}>
+              <div className="flex flex-wrap gap-3">
+                {ALL_COHORTS.map(cohort => {
+                  const isLive = icp?.find(c => c.cohort === cohort)?.is_live ?? false
+                  return (
+                    <label key={cohort} className="flex cursor-pointer items-center gap-1.5 text-sm">
+                      <input type="checkbox" name={`icp_${cohort}`} value="true" defaultChecked={isLive}
+                        className="rounded border-gray-300" />
+                      <span className="capitalize">{cohort.replace('_', ' ')}</span>
+                    </label>
+                  )
+                })}
+              </div>
+              <FormActions cancelHref={base} />
+            </form>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(icp ?? []).length === 0
+                ? <p className="text-sm text-gray-400">No ICP data</p>
+                : icp!.map(c => (
+                    <span key={c.cohort} className={`rounded-full px-3 py-1 text-xs font-medium ${
+                      c.is_live ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'
+                    }`}>{c.cohort}</span>
+                  ))}
             </div>
-          </section>
-        )}
+          )}
+        </Section>
 
-        {/* ── CM cohorts (read-only) ── */}
-        {(cmCohorts?.length ?? 0) > 0 && (
-          <section className="rounded-xl border border-gray-200 bg-white">
-            <h2 className="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">Centralised Management Cohorts</h2>
-            <div className="px-4 py-3 flex flex-wrap gap-2">
-              {cmCohorts!.map(c => (
-                <span key={`${c.cohort}-${c.cm_type}`} className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-700">
-                  {c.cohort} ({c.cm_type})
-                </span>
-              ))}
+        {/* ── CM Cohorts ── */}
+        <Section title="CM Cohorts" editHref={ed('cm')} isEditing={edit === 'cm'} canEdit={!!canEdit}>
+          {edit === 'cm' ? (
+            <form action={saveCmCohorts}>
+              <div className="overflow-x-auto">
+                <table className="text-sm">
+                  <thead>
+                    <tr className="text-xs text-gray-500">
+                      <th className="pb-2 pr-6 text-left font-medium">Cohort</th>
+                      <th className="pb-2 pr-4 text-center font-medium">Hybrid</th>
+                      <th className="pb-2 text-center font-medium">Full</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ALL_COHORTS.map(cohort => {
+                      const hasHybrid = cmCohorts?.some(c => c.cohort === cohort && c.cm_type === 'hybrid')
+                      const hasFull   = cmCohorts?.some(c => c.cohort === cohort && c.cm_type === 'full')
+                      return (
+                        <tr key={cohort} className="border-t border-gray-100">
+                          <td className="py-1 pr-6 capitalize">{cohort.replace('_', ' ')}</td>
+                          <td className="py-1 pr-4 text-center">
+                            <input type="checkbox" name={`cm_hybrid_${cohort}`} value="true" defaultChecked={!!hasHybrid} />
+                          </td>
+                          <td className="py-1 text-center">
+                            <input type="checkbox" name={`cm_full_${cohort}`} value="true" defaultChecked={!!hasFull} />
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <FormActions cancelHref={base} />
+            </form>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(cmCohorts ?? []).length === 0
+                ? <p className="text-sm text-gray-400">No CM cohorts</p>
+                : cmCohorts!.map(c => (
+                    <span key={`${c.cohort}-${c.cm_type}`}
+                      className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-700">
+                      {c.cohort} ({c.cm_type})
+                    </span>
+                  ))}
             </div>
-          </section>
-        )}
+          )}
+        </Section>
 
         {/* ── Letters ── */}
         {lc && (
-          <Section title="Letters" editHref={`${base}?edit=letters`}
-            isEditing={edit === 'letters'} canEdit={!!canEdit}>
+          <Section title="Letters" editHref={ed('letters')} isEditing={edit === 'letters'} canEdit={!!canEdit}>
             {edit === 'letters' ? (
               <form action={saveLetters}>
                 <EditField label="Letters to EPIC"><BoolSelect name="letters_to_epic" value={lc.letters_to_epic} /></EditField>
@@ -435,17 +382,40 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
           </Section>
         )}
 
-        {/* ── Server & Config (read-only) ── */}
-        {sc && (
-          <section className="rounded-xl border border-gray-200 bg-white">
-            <h2 className="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">Server & Config</h2>
-            <div className="px-4 py-3">
-              <Field label="Server IP">{sc.server_ip ?? '—'}</Field>
+        {/* ── Server & Config ── */}
+        <Section title="Server & Config" editHref={ed('server')} isEditing={edit === 'server'} canEdit={!!canEdit}>
+          {edit === 'server' ? (
+            <form action={saveServerCfg}>
+              <EditField label="Server IP">
+                <input name="server_ip" defaultValue={sc?.server_ip ?? ''}
+                  className="w-48 rounded border border-gray-300 px-2 py-1 text-sm font-mono" />
+              </EditField>
+              <EditField label="S3 Folder">
+                <input name="s3_folder" defaultValue={sc?.s3_folder ?? ''}
+                  className="w-72 rounded border border-gray-300 px-2 py-1 text-sm font-mono" />
+              </EditField>
+              <EditField label="SFTP Folder Link">
+                <input name="sftp_folder_link" defaultValue={sc?.sftp_folder_link ?? ''}
+                  className="w-96 rounded border border-gray-300 px-2 py-1 text-sm" />
+              </EditField>
+              <div className="py-1.5">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="w-44 shrink-0 text-xs text-gray-500">Ports</span>
+                  <span className="text-xs text-gray-400">One per line: <code>port_number: label</code></span>
+                </div>
+                <textarea name="ports" defaultValue={portsDefault} rows={4}
+                  className="ml-44 w-72 rounded border border-gray-300 px-2 py-1 text-sm font-mono" />
+              </div>
+              <FormActions cancelHref={base} />
+            </form>
+          ) : (
+            <>
+              <Field label="Server IP">{sc?.server_ip ?? '—'}</Field>
               <Field label="S3 Folder">
-                {sc.s3_folder ? <code className="rounded bg-gray-100 px-1 text-xs">{sc.s3_folder}</code> : '—'}
+                {sc?.s3_folder ? <code className="rounded bg-gray-100 px-1 text-xs">{sc.s3_folder}</code> : '—'}
               </Field>
               <Field label="SFTP Folder">
-                {sc.sftp_folder_link
+                {sc?.sftp_folder_link
                   ? <a href={sc.sftp_folder_link} target="_blank" rel="noopener noreferrer"
                       className="text-xs text-blue-600 hover:underline">{sc.sftp_folder_link}</a>
                   : '—'}
@@ -461,19 +431,26 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                   </div>
                 </Field>
               )}
-            </div>
-          </section>
-        )}
+            </>
+          )}
+        </Section>
 
-        {/* ── Reporting DB (read-only) ── */}
-        {rd?.db_name && (
-          <section className="rounded-xl border border-gray-200 bg-white">
-            <h2 className="border-b border-gray-100 px-4 py-3 text-sm font-semibold text-gray-700">Reporting Database</h2>
-            <div className="px-4 py-3">
-              <Field label="Database Name"><code className="rounded bg-gray-100 px-1 text-xs">{rd.db_name}</code></Field>
-            </div>
-          </section>
-        )}
+        {/* ── Reporting DB ── */}
+        <Section title="Reporting Database" editHref={ed('reporting')} isEditing={edit === 'reporting'} canEdit={!!canEdit}>
+          {edit === 'reporting' ? (
+            <form action={saveReportingDb}>
+              <EditField label="Database Name">
+                <input name="db_name" defaultValue={rd?.db_name ?? ''}
+                  className="w-72 rounded border border-gray-300 px-2 py-1 text-sm font-mono" />
+              </EditField>
+              <FormActions cancelHref={base} />
+            </form>
+          ) : (
+            <Field label="Database Name">
+              {rd?.db_name ? <code className="rounded bg-gray-100 px-1 text-xs">{rd.db_name}</code> : '—'}
+            </Field>
+          )}
+        </Section>
 
       </div>
     </main>

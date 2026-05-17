@@ -2,17 +2,23 @@
 
 import { usePathname } from 'next/navigation'
 
-const NAV_LINKS = [
+const BASE_LINKS = [
   { href: '/sites',      label: 'Sites' },
   { href: '/facilities', label: 'Facilities' },
 ]
 
-export default function NavLinks() {
+const ADMIN_LINKS = [
+  { href: '/admin/audit',  label: 'Audit Log' },
+  { href: '/admin/import', label: 'Import' },
+]
+
+export default function NavLinks({ showAudit = false }: { showAudit?: boolean }) {
   const pathname = usePathname()
+  const links = showAudit ? [...BASE_LINKS, ...ADMIN_LINKS] : BASE_LINKS
 
   return (
     <nav className="flex items-center gap-1">
-      {NAV_LINKS.map(link => {
+      {links.map(link => {
         const active = pathname.startsWith(link.href)
         return (
           <a

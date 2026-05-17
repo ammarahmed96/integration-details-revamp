@@ -12,6 +12,7 @@ export default async function SitesPage({ searchParams }: Props) {
     .from('sites')
     .select('id, slug, name')
     .order('name')
+    .limit(500)
 
   if (q?.trim()) {
     query = query.or(`name.ilike.%${q.trim()}%,slug.ilike.%${q.trim()}%`)
@@ -24,7 +25,13 @@ export default async function SitesPage({ searchParams }: Props) {
     <main className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Sites</h1>
-        <span className="text-sm text-gray-500">{sites?.length ?? 0} result{sites?.length !== 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">{sites?.length ?? 0} result{sites?.length !== 1 ? 's' : ''}</span>
+          <a href="/sites/new"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            + Add Site
+          </a>
+        </div>
       </div>
 
       {/* Search */}
