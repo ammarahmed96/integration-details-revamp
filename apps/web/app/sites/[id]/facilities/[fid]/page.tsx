@@ -8,8 +8,15 @@ import {
 } from '@/app/actions/facility'
 import {
   Badge, FeedBadge, Field, BoolSelect, FeedSelect, EditField, GridField,
-  FormActions, Section, ReadSection, ALL_COHORTS, MIDDLEWARE_OPTIONS,
+  FormActions, Section, ReadSection,
 } from './facility-ui'
+import { COHORT_LIST as ALL_COHORTS } from '@/lib/cohorts'
+
+const MIDDLEWARE_OPTIONS = [
+  'eon-middleware','eon-hca-middleware','eon-middleware-bmhcc',
+  'eon-lpnt-middleware','eon-ascension-middleware','eon-uch-middleware',
+  'eon-geisinger-middleware','eon-middleware-queue',
+]
 
 interface Props {
   params: Promise<{ id: string; fid: string }>

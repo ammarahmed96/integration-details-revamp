@@ -140,10 +140,3 @@ export function ReadSection({ title, children }: { title: string; children: Reac
   )
 }
 
-export { COHORT_LIST as ALL_COHORTS } from '@/lib/cohorts'
-
-export const MIDDLEWARE_OPTIONS = [
-  'eon-middleware','eon-hca-middleware','eon-middleware-bmhcc',
-  'eon-lpnt-middleware','eon-ascension-middleware','eon-uch-middleware',
-  'eon-geisinger-middleware','eon-middleware-queue',
-]
