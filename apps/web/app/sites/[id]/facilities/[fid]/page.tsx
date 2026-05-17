@@ -121,8 +121,11 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
               <Field label="SSO"><Badge active={!!facility.has_sso} label={facility.has_sso ? 'Yes' : 'No'} /></Field>
               {facility.implementation_package_url && (
                 <Field label="Implementation Package">
-                  <a href={facility.implementation_package_url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:underline">{facility.implementation_package_url}</a>
+                  {facility.implementation_package_url.startsWith('http')
+                    ? <a href={facility.implementation_package_url} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline">{facility.implementation_package_url}</a>
+                    : <span className="text-xs text-gray-700">{facility.implementation_package_url}</span>
+                  }
                 </Field>
               )}
             </>

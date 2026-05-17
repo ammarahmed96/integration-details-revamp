@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface Props {
   searchParams: Promise<{ q?: string }>
@@ -31,7 +31,10 @@ export default async function SitesPage({ searchParams }: Props) {
     query = query.or(`name.ilike.%${q.trim()}%,slug.ilike.%${q.trim()}%`)
   }
 
-  const { data: sites, error } = await query
+  const [{ data: sites, error }, { data: canEdit }] = await Promise.all([
+    query,
+    supabase.rpc('is_global_editor'),
+  ])
   if (error) throw error
 
   return (
@@ -43,9 +46,11 @@ export default async function SitesPage({ searchParams }: Props) {
             Manage healthcare site configurations
           </p>
         </div>
-        <a href="/sites/new" className={cn(buttonVariants({ size: 'sm' }))}>
-          + Add Site
-        </a>
+        {canEdit && (
+          <a href="/sites/new" className={cn(buttonVariants({ size: 'sm' }))}>
+            + Add Site
+          </a>
+        )}
       </div>
 
       {/* Search */}
@@ -53,7 +58,7 @@ export default async function SitesPage({ searchParams }: Props) {
         <Input
           name="q"
           defaultValue={q ?? ''}
-          placeholder="Search by name or slug…"
+          placeholder="Search by name or site_id…"
           className="max-w-sm bg-background"
         />
         <Button type="submit" variant="outline" size="sm">Search</Button>
@@ -70,16 +75,13 @@ export default async function SitesPage({ searchParams }: Props) {
       </form>
 
       <Card>
-        <CardHeader className="py-0 px-0">
-          {/* intentionally empty — table provides its own header row */}
-        </CardHeader>
         <CardContent className="p-0">
           {sites && sites.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="pl-4">Name</TableHead>
-                  <TableHead>Slug</TableHead>
+                  <TableHead>Site ID</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

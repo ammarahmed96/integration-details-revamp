@@ -17,11 +17,14 @@ export default async function SiteDetailPage({ params }: Props) {
 
   if (error || !site) notFound()
 
-  const { data: facilities } = await supabase
-    .from('facilities')
-    .select('id, campus_id, name, is_active, ehr_index_pattern')
-    .eq('site_id', id)
-    .order('name')
+  const [{ data: facilities }, { data: canEdit }] = await Promise.all([
+    supabase
+      .from('facilities')
+      .select('id, campus_id, name, is_active, ehr_index_pattern')
+      .eq('site_id', id)
+      .order('name'),
+    supabase.rpc('can_edit_site', { p_site_id: id }),
+  ])
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
@@ -32,15 +35,17 @@ export default async function SiteDetailPage({ params }: Props) {
       </nav>
 
       <h1 className="mb-1 text-2xl font-semibold">{site.name}</h1>
-      <p className="mb-8 text-sm text-gray-500">Slug: {site.slug}</p>
+      <p className="mb-8 text-sm text-gray-500">Site ID: {site.slug}</p>
 
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-medium">Facilities ({facilities?.length ?? 0})</h2>
-          <a href={`/sites/${id}/facilities/new`}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-            + Add Facility
-          </a>
+          {canEdit && (
+            <a href={`/sites/${id}/facilities/new`}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              + Add Facility
+            </a>
+          )}
         </div>
         <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
           <table className="w-full text-sm">
