@@ -3,7 +3,6 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { COHORT_LIST, type CohortType } from '@/lib/cohorts'
 
 function facilityPath(siteId: string, fid: string) {
   return `/sites/${siteId}/facilities/${fid}`
@@ -144,10 +143,17 @@ export async function updateEpicIntegrations(siteId: string, fid: string, formDa
 
   const { data: before } = await supabase.from('epic_integrations').select('*').eq('facility_id', fid).single()
 
+  const middlewareVal = (formData.get('parsing_middleware') as string) || null
+  if (middlewareVal) {
+    const { data: valid } = await supabase
+      .from('config_list_items').select('id').eq('category', 'middleware').eq('value', middlewareVal).eq('is_active', true).single()
+    if (!valid) throw new Error('Invalid parsing_middleware value')
+  }
+
   const patch = {
     fhir:               formData.get('fhir') === 'true',
     outgoing_mdm:       formData.get('outgoing_mdm') === 'true',
-    parsing_middleware: (formData.get('parsing_middleware') as string) || null,
+    parsing_middleware: middlewareVal,
   }
   const { error } = await supabase.from('epic_integrations').update(patch).eq('facility_id', fid)
   if (error) throw new Error(error.message)
@@ -190,7 +196,11 @@ export async function updateCohorts(siteId: string, fid: string, formData: FormD
   const { data: canWrite } = await supabase.rpc('can_edit_site', { p_site_id: siteId })
   if (!canWrite) throw new Error('Forbidden')
 
-  const updates = COHORT_LIST.map(cohort => ({
+  const { data: cohortDefs } = await supabase
+    .from('cohort_definitions').select('name').eq('is_active', true).order('sort_order')
+  const cohortNames = cohortDefs?.map(c => c.name) ?? []
+
+  const updates = cohortNames.map(cohort => ({
     facility_id: fid,
     cohort,
     is_live: formData.get(`cohort_${cohort}`) === 'true',
@@ -313,7 +323,11 @@ export async function updateIcpGolive(siteId: string, fid: string, formData: For
   const { data: canWrite } = await supabase.rpc('can_edit_site', { p_site_id: siteId })
   if (!canWrite) throw new Error('Forbidden')
 
-  const updates = COHORT_LIST.map(cohort => ({
+  const { data: cohortDefs } = await supabase
+    .from('cohort_definitions').select('name').eq('is_active', true).order('sort_order')
+  const cohortNames = cohortDefs?.map(c => c.name) ?? []
+
+  const updates = cohortNames.map(cohort => ({
     facility_id: fid,
     cohort,
     is_live: formData.get(`icp_${cohort}`) === 'true',
@@ -338,8 +352,12 @@ export async function updateCmCohorts(siteId: string, fid: string, formData: For
   const { data: canWrite } = await supabase.rpc('can_edit_site', { p_site_id: siteId })
   if (!canWrite) throw new Error('Forbidden')
 
-  const desired: { facility_id: string; cohort: CohortType; cm_type: 'hybrid' | 'full' }[] = []
-  for (const cohort of COHORT_LIST) {
+  const { data: cohortDefs } = await supabase
+    .from('cohort_definitions').select('name').eq('is_active', true).order('sort_order')
+  const cohortNames = cohortDefs?.map(c => c.name) ?? []
+
+  const desired: { facility_id: string; cohort: string; cm_type: 'hybrid' | 'full' }[] = []
+  for (const cohort of cohortNames) {
     for (const cm_type of ['hybrid', 'full'] as const) {
       if (formData.get(`cm_${cm_type}_${cohort}`) === 'true') {
         desired.push({ facility_id: fid, cohort, cm_type })

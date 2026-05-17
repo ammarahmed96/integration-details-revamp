@@ -256,17 +256,17 @@ export type Database = {
       facility_cm_cohorts: {
         Row: {
           cm_type: string
-          cohort: Database["public"]["Enums"]["cohort_type"]
+          cohort: string
           facility_id: string
         }
         Insert: {
           cm_type: string
-          cohort: Database["public"]["Enums"]["cohort_type"]
+          cohort: string
           facility_id: string
         }
         Update: {
           cm_type?: string
-          cohort?: Database["public"]["Enums"]["cohort_type"]
+          cohort?: string
           facility_id?: string
         }
         Relationships: [
@@ -281,17 +281,17 @@ export type Database = {
       }
       facility_cohorts: {
         Row: {
-          cohort: Database["public"]["Enums"]["cohort_type"]
+          cohort: string
           facility_id: string
           is_live: boolean
         }
         Insert: {
-          cohort: Database["public"]["Enums"]["cohort_type"]
+          cohort: string
           facility_id: string
           is_live?: boolean
         }
         Update: {
-          cohort?: Database["public"]["Enums"]["cohort_type"]
+          cohort?: string
           facility_id?: string
           is_live?: boolean
         }
@@ -307,17 +307,17 @@ export type Database = {
       }
       facility_icp_golive: {
         Row: {
-          cohort: Database["public"]["Enums"]["cohort_type"]
+          cohort: string
           facility_id: string
           is_live: boolean
         }
         Insert: {
-          cohort: Database["public"]["Enums"]["cohort_type"]
+          cohort: string
           facility_id: string
           is_live?: boolean
         }
         Update: {
-          cohort?: Database["public"]["Enums"]["cohort_type"]
+          cohort?: string
           facility_id?: string
           is_live?: boolean
         }
@@ -337,21 +337,21 @@ export type Database = {
           facility_id: string
           id: string
           port_name: string | null
-          port_number: string
+          port_number: number
         }
         Insert: {
           created_at?: string | null
           facility_id: string
           id?: string
           port_name?: string | null
-          port_number: string
+          port_number: number
         }
         Update: {
           created_at?: string | null
           facility_id?: string
           id?: string
           port_name?: string | null
-          port_number?: string
+          port_number?: number
         }
         Relationships: [
           {
@@ -718,6 +718,18 @@ export type Database = {
           },
         ]
       }
+      cohort_definitions: {
+        Row: { id: string; name: string; display_name: string; sort_order: number; is_active: boolean; created_at: string | null }
+        Insert: { id?: string; name: string; display_name: string; sort_order?: number; is_active?: boolean; created_at?: string | null }
+        Update: { id?: string; name?: string; display_name?: string; sort_order?: number; is_active?: boolean; created_at?: string | null }
+        Relationships: []
+      }
+      config_list_items: {
+        Row: { id: string; category: string; value: string; display_name: string; sort_order: number; is_active: boolean; created_at: string | null }
+        Insert: { id?: string; category: string; value: string; display_name: string; sort_order?: number; is_active?: boolean; created_at?: string | null }
+        Update: { id?: string; category?: string; value?: string; display_name?: string; sort_order?: number; is_active?: boolean; created_at?: string | null }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
@@ -752,20 +764,6 @@ export type Database = {
       is_global_editor: { Args: never; Returns: boolean }
     }
     Enums: {
-      cohort_type:
-        | "lcs"
-        | "lung"
-        | "g_lung"
-        | "aaa"
-        | "taa"
-        | "pancreas"
-        | "ielcap"
-        | "thyroid"
-        | "liver"
-        | "renal"
-        | "calcium"
-        | "af"
-        | "breast"
       feed_status: "active" | "inactive" | "flat_file"
     }
     CompositeTypes: {
@@ -897,21 +895,6 @@ export const Constants = {
   },
   public: {
     Enums: {
-      cohort_type: [
-        "lcs",
-        "lung",
-        "g_lung",
-        "aaa",
-        "taa",
-        "pancreas",
-        "ielcap",
-        "thyroid",
-        "liver",
-        "renal",
-        "calcium",
-        "af",
-        "breast",
-      ],
       feed_status: ["active", "inactive", "flat_file"],
     },
   },

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { COHORT_LIST, type CohortType } from '@/lib/cohorts'
+// Cohort names for column-mapped Excel import (positional, must stay in sync with spreadsheet)
+const COHORT_LIST = [
+  'lcs','lung','g_lung','aaa','taa','pancreas',
+  'ielcap','thyroid','liver','renal','calcium','af','breast',
+] as const
 
 // Column indices matching the SitesCampuses sheet layout
 const C = {
@@ -65,7 +69,7 @@ const VALID_MIDDLEWARE = new Set([
   'eon-geisinger-middleware','eon-middleware-queue',
 ])
 
-const COHORT_MAP: Record<string, CohortType> = {
+const COHORT_MAP: Record<string, string> = {
   'lcs':'lcs','lung':'lung','g lung':'g_lung','g_lung':'g_lung','aaa':'aaa','taa':'taa',
   'panc':'pancreas','pancreas':'pancreas','ielcap':'ielcap','thyroid':'thyroid',
   'liver':'liver','renal':'renal','calcium':'calcium','af':'af','breast':'breast',
@@ -87,9 +91,9 @@ function feedStatus(v: unknown): 'active' | 'inactive' | 'flat_file' {
   if (s === 'flat file' || s === 'flat_file') return 'flat_file'
   return s === 'true' || s === 'active' ? 'active' : 'inactive'
 }
-function parseCohorts(v: unknown): CohortType[] {
+function parseCohorts(v: unknown): string[] {
   if (!v || typeof v === 'boolean') return []
-  return String(v).split(',').map(p => COHORT_MAP[p.trim().toLowerCase()]).filter(Boolean) as CohortType[]
+  return String(v).split(',').map(p => COHORT_MAP[p.trim().toLowerCase()]).filter(Boolean)
 }
 
 export async function POST(req: NextRequest) {
@@ -203,8 +207,8 @@ export async function POST(req: NextRequest) {
 
     summary.facilities++
 
-    const cohortRows     = COHORT_LIST.map((cohort, i) => ({ facility_id: facId, cohort, is_live: boolV(r[LIVE_COHORT_COLS[i]]) }))
-    const icpRows        = COHORT_LIST.map((cohort, i) => ({ facility_id: facId, cohort, is_live: boolV(r[ICP_COHORT_COLS[i]]) }))
+    const cohortRows     = COHORT_LIST.map((cohort: string, i: number) => ({ facility_id: facId, cohort, is_live: boolV(r[LIVE_COHORT_COLS[i]]) }))
+    const icpRows        = COHORT_LIST.map((cohort: string, i: number) => ({ facility_id: facId, cohort, is_live: boolV(r[ICP_COHORT_COLS[i]]) }))
     const hybridCohorts  = parseCohorts(r[C.CM_HYBRID])
     const fullCohorts    = parseCohorts(r[C.CM_FULL])
     const cmRows         = [
@@ -274,7 +278,7 @@ export async function POST(req: NextRequest) {
       await admin.from('facility_ports').delete().eq('facility_id', facId)
       const portRows = nums.map((num, i) => ({
         facility_id: facId,
-        port_number: num.replace(/\.0$/, ''),
+        port_number: parseInt(num.replace(/\.0$/, ''), 10),
         port_name: names[i] || null,
       }))
       await admin.from('facility_ports').insert(portRows)

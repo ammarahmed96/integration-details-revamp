@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { COHORT_LIST } from '@/lib/cohorts'
 
 // ── Create Site ───────────────────────────────────────────────────────────────
 
@@ -56,6 +55,10 @@ export async function createFacility(siteId: string, formData: FormData) {
 
   const fid = fac.id
 
+  const { data: cohortDefs } = await supabase
+    .from('cohort_definitions').select('name').eq('is_active', true)
+  const cohortNames = cohortDefs?.map(c => c.name) ?? []
+
   // Create child records with defaults so all sections are editable immediately
   const results = await Promise.allSettled([
     supabase.from('ehr_details').insert({ facility_id: fid }),
@@ -66,7 +69,7 @@ export async function createFacility(siteId: string, formData: FormData) {
     supabase.from('reporting_db').insert({ facility_id: fid }),
     supabase.from('server_configs').insert({ facility_id: fid }),
     supabase.from('facility_cohorts').insert(
-      COHORT_LIST.map(cohort => ({ facility_id: fid, cohort, is_live: false }))
+      cohortNames.map(cohort => ({ facility_id: fid, cohort, is_live: false }))
     ),
   ])
 

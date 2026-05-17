@@ -12,6 +12,7 @@ const ADMIN_LINKS = [
   { href: '/admin/import', label: 'Import' },
   { href: '/admin/export', label: 'Export' },
   { href: '/admin/roles',  label: 'Roles' },
+  { href: '/admin/config', label: 'Config' },
 ]
 
 export default function NavLinks({ showAudit = false }: { showAudit?: boolean }) {

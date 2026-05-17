@@ -1,6 +1,3 @@
-export const COHORT_LIST = [
-  'lcs','lung','g_lung','aaa','taa','pancreas',
-  'ielcap','thyroid','liver','renal','calcium','af','breast',
-] as const
-
-export type CohortType = typeof COHORT_LIST[number]
+// Cohorts are now managed via cohort_definitions table in the database.
+// This type alias is kept for legacy compatibility.
+export type CohortType = string

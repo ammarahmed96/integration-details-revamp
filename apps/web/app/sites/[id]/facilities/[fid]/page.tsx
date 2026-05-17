@@ -10,14 +10,6 @@ import {
   Badge, FeedBadge, Field, BoolSelect, FeedSelect, EditField, GridField,
   FormActions, Section, ReadSection,
 } from './facility-ui'
-import { COHORT_LIST as ALL_COHORTS } from '@/lib/cohorts'
-
-const MIDDLEWARE_OPTIONS = [
-  'eon-middleware','eon-hca-middleware','eon-middleware-bmhcc',
-  'eon-lpnt-middleware','eon-ascension-middleware','eon-uch-middleware',
-  'eon-geisinger-middleware','eon-middleware-queue',
-]
-
 interface Props {
   params: Promise<{ id: string; fid: string }>
   searchParams: Promise<{ edit?: string }>
@@ -35,10 +27,14 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
   if (!facility || !site) notFound()
 
   const [
+    { data: cohortDefs },
+    { data: middlewareDefs },
     { data: canEdit }, { data: rf }, { data: pf }, { data: ei },
     { data: cohorts }, { data: cmCohorts }, { data: icp },
     { data: ports }, { data: sc }, { data: lc }, { data: rd }, { data: ehr },
   ] = await Promise.all([
+    supabase.from('cohort_definitions').select('name, display_name').eq('is_active', true).order('sort_order'),
+    supabase.from('config_list_items').select('value').eq('category', 'middleware').eq('is_active', true).order('sort_order'),
     supabase.rpc('can_edit_site', { p_site_id: siteId }),
     supabase.from('receiving_feeds').select('*').eq('facility_id', fid).single(),
     supabase.from('parsing_feeds').select('*').eq('facility_id', fid).single(),
@@ -52,6 +48,10 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
     supabase.from('reporting_db').select('*').eq('facility_id', fid).single(),
     supabase.from('ehr_details').select('*').eq('facility_id', fid).single(),
   ])
+
+  const ALL_COHORTS = cohortDefs?.map(c => c.name) ?? []
+  const MIDDLEWARE_OPTIONS = middlewareDefs?.map(m => m.value) ?? []
+  const cohortLabel = (name: string) => cohortDefs?.find(c => c.name === name)?.display_name ?? name
 
   const allCohorts  = cohorts ?? []
   const liveCohorts = allCohorts.filter(c => c.is_live)
@@ -270,7 +270,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                       <label key={cohort} className="flex cursor-pointer items-center gap-1.5 text-sm">
                         <input type="checkbox" name={`cohort_${cohort}`} value="true" defaultChecked={isLive}
                           className="rounded border-gray-300" />
-                        <span className="capitalize">{cohort.replace(/_/g, ' ')}</span>
+                        <span className="capitalize">{cohortLabel(cohort)}</span>
                       </label>
                     )
                   })}
@@ -303,7 +303,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                     <label key={cohort} className="flex cursor-pointer items-center gap-1.5 text-sm">
                       <input type="checkbox" name={`icp_${cohort}`} value="true" defaultChecked={isLive}
                         className="rounded border-gray-300" />
-                      <span className="capitalize">{cohort.replace(/_/g, ' ')}</span>
+                      <span className="capitalize">{cohortLabel(cohort)}</span>
                     </label>
                   )
                 })}
@@ -342,7 +342,7 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
                       const hasFull   = cmCohorts?.some(c => c.cohort === cohort && c.cm_type === 'full')
                       return (
                         <tr key={cohort} className="border-t border-gray-100">
-                          <td className="py-1 pr-6 capitalize">{cohort.replace(/_/g, ' ')}</td>
+                          <td className="py-1 pr-6 capitalize">{cohortLabel(cohort)}</td>
                           <td className="py-1 pr-4 text-center">
                             <input type="checkbox" name={`cm_hybrid_${cohort}`} value="true" defaultChecked={!!hasHybrid} />
                           </td>
