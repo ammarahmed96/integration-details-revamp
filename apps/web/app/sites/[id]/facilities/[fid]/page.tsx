@@ -7,7 +7,7 @@ import {
   updateIcpGolive, updateCmCohorts,
 } from '@/app/actions/facility'
 import {
-  Badge, FeedBadge, Field, BoolSelect, FeedSelect, EditField,
+  Badge, FeedBadge, Field, BoolSelect, FeedSelect, EditField, GridField,
   FormActions, Section, ReadSection, ALL_COHORTS, MIDDLEWARE_OPTIONS,
 } from './facility-ui'
 
@@ -164,15 +164,15 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
           <Section title="Receiving Feeds" editHref={ed('receiving')} isEditing={edit === 'receiving'} canEdit={!!canEdit}>
             {edit === 'receiving' ? (
               <form action={saveReceiving}>
-                <div className="grid grid-cols-2 gap-x-8 sm:grid-cols-4">
-                  <EditField label="ADT"><FeedSelect name="adt" value={rf.adt} /></EditField>
-                  <EditField label="ORU"><FeedSelect name="oru" value={rf.oru} /></EditField>
-                  <EditField label="ORM"><BoolSelect name="orm" value={rf.orm} /></EditField>
-                  <EditField label="SIU"><BoolSelect name="siu" value={rf.siu} /></EditField>
-                  <EditField label="MDM"><BoolSelect name="mdm" value={rf.mdm} /></EditField>
-                  <EditField label="BAR"><BoolSelect name="bar" value={rf.bar} /></EditField>
-                  <EditField label="MFN"><BoolSelect name="mfn" value={rf.mfn} /></EditField>
-                  <EditField label="Clarity"><BoolSelect name="clarity" value={rf.clarity} /></EditField>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
+                  <GridField label="ADT"><FeedSelect name="adt" value={rf.adt} /></GridField>
+                  <GridField label="ORU"><FeedSelect name="oru" value={rf.oru} /></GridField>
+                  <GridField label="ORM"><BoolSelect name="orm" value={rf.orm} /></GridField>
+                  <GridField label="SIU"><BoolSelect name="siu" value={rf.siu} /></GridField>
+                  <GridField label="MDM"><BoolSelect name="mdm" value={rf.mdm} /></GridField>
+                  <GridField label="BAR"><BoolSelect name="bar" value={rf.bar} /></GridField>
+                  <GridField label="MFN"><BoolSelect name="mfn" value={rf.mfn} /></GridField>
+                  <GridField label="Clarity"><BoolSelect name="clarity" value={rf.clarity} /></GridField>
                 </div>
                 <FormActions cancelHref={base} />
               </form>
@@ -196,14 +196,14 @@ export default async function FacilityDetailPage({ params, searchParams }: Props
           <Section title="Parsing Feeds" editHref={ed('parsing')} isEditing={edit === 'parsing'} canEdit={!!canEdit}>
             {edit === 'parsing' ? (
               <form action={saveParsing}>
-                <div className="grid grid-cols-2 gap-x-8 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
                   {([
                     ['parsing_files','Parsing Files'],['adt','ADT'],['oru','ORU'],['orm','ORM'],
                     ['siu','SIU'],['flat_file_scheduling','Flat File Sched.'],['mdm','MDM'],['bar','BAR'],
                     ['mfn','MFN'],['clarity','Clarity'],['physician_clarity','Physician Clarity'],
                     ['exam_clarity','Exam Clarity'],['eon_connect','Eon Connect'],
                   ] as [keyof typeof pf, string][]).map(([key, label]) => (
-                    <EditField key={key} label={label}><BoolSelect name={key} value={!!pf[key]} /></EditField>
+                    <GridField key={key} label={label}><BoolSelect name={key} value={!!pf[key]} /></GridField>
                   ))}
                 </div>
                 <FormActions cancelHref={base} />
